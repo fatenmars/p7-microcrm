@@ -90,3 +90,36 @@ jobs:
         uses: SonarSource/sonarqube-scan-action@v5
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+  publish:
+    name: Publish images
+    needs: [back, front, sonar]
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & push back image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: back
+          push: true
+          tags: ghcr.io/fatenmars/microcrm-back:latest
+
+      - name: Build & push front image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: front
+          push: true
+          tags: ghcr.io/fatenmars/microcrm-front:latest
