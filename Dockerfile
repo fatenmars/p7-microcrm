@@ -1,4 +1,4 @@
-FROM node as front-build
+FROM node:20-alpine AS front-build
 
 COPY ./front /src
 
@@ -7,15 +7,15 @@ WORKDIR /src
 RUN npm ci \
     && npx @angular/cli build --optimization
 
-FROM gradle:jdk17 as back-build
+FROM gradle:8.7-jdk17 AS back-build
 
 COPY ./back /src
 
 WORKDIR /src
 
-RUN ./gradlew build
+RUN gradle build
 
-FROM alpine:3.19 as front
+FROM alpine:3.19 AS front
 
 COPY --from=front-build /src/dist/microcrm/browser /app/front
 COPY misc/docker/Caddyfile /app/Caddyfile
@@ -29,19 +29,19 @@ EXPOSE 443
 
 CMD ["/usr/sbin/caddy", "run"]
 
-FROM alpine:3.19 as back
+FROM alpine:3.19 AS back
 
 COPY --from=back-build /src/build/libs/microcrm-0.0.1-SNAPSHOT.jar /app/back/microcrm-0.0.1-SNAPSHOT.jar
 
-RUN apk add openjdk21-jre-headless
+RUN apk add --no-cache openjdk17-jre-headless
 
 WORKDIR /app
 
-EXPOSE 4200
+EXPOSE 8080
 
 CMD ["java", "-jar", "/app/back/microcrm-0.0.1-SNAPSHOT.jar"]
 
-FROM alpine:3.19 as standalone
+FROM alpine:3.19 AS standalone
 
 COPY --from=front / /
 COPY --from=back / /

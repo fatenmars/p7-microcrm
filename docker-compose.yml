@@ -1,0 +1,17 @@
+services:
+  back:
+    build:
+      context: .
+      target: back
+    ports:
+      - "8080:8080"
+
+  front:
+    build:
+      context: .
+      target: front
+    ports:
+      - "80:80"
+      - "443:443"
+    depends_on:
+      - back
