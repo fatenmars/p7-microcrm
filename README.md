@@ -153,3 +153,36 @@ docker run -it --rm -p 8080:8080 -p 80:80 -p 443:443 orion-microcrm-standalone:l
 ```
 
 L'application sera disponible sur https://localhost et l'API sur http://localhost:8080.
+
+## Intégration et déploiement continu (CI/CD)
+
+### Choix techniques
+
+- Monorepo Spring Boot 3 (back, Java 17, Gradle) et Angular 17 (front).
+- Conteneurisation : un Dockerfile multi-stage (cibles `front`, `back`, `standalone`) et un `docker-compose.yml` pour orchestrer l'application. Images de base officielles, minimales (Alpine) et à versions épinglées.
+- CI/CD : GitHub Actions (`.github/workflows/ci.yml`). À chaque push et pull request, le pipeline build et teste le back et le front, puis analyse la qualité et la sécurité avec SonarCloud. À chaque merge sur `main`, il publie les images Docker sur le GitHub Container Registry.
+- Monitoring : une stack ELK locale (`docker-compose-elk.yml`) centralise les logs de l'application.
+
+### Lancer l'application complète (Docker Compose)
+
+```shell
+docker-compose up
+```
+
+L'application est disponible sur https://localhost et l'API sur http://localhost:8080.
+
+### Lancer le monitoring (ELK)
+
+```shell
+docker-compose -f docker-compose-elk.yml up -d
+```
+
+Kibana est disponible sur http://localhost:5601.
+
+### Pipeline CI/CD
+
+Le workflow `.github/workflows/ci.yml` définit quatre jobs : `back` (build et tests Gradle), `front` (build et tests Angular), `sonar` (analyse SonarCloud), et `publish` (publication des images sur ghcr.io, uniquement sur `main`). Les secrets comme `SONAR_TOKEN` sont gérés via les GitHub Secrets et ne sont jamais exposés en clair.
+
+### Documentation technique
+
+La documentation technique complète (pipeline, sécurité, monitoring, métriques DORA, plans de sauvegarde et de mise à jour) est disponible dans le document de documentation technique du projet.
